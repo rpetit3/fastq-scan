@@ -1,14 +1,3 @@
-/*
-fastq-stats
-
-I needed a quick method to output summary statistics of an input FASTQ. I found
-the question: "How To Efficiently Parse A Huge Fastq File?" on Biostars (link
-below). From that question I used code from Pierre Lindenbaum's C++ solution as
-the base for this program.
-
-Biostars Link: https://www.biostars.org/p/10353/
-*/
-
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -18,23 +7,32 @@ Biostars Link: https://www.biostars.org/p/10353/
 #include <math.h>
 #include <sstream>
 using namespace std;
+const float VERSION = 0.1;
 const int MAX_READ_LENGTH = 50000;
 
 class Stats {
     public:
+        unsigned long int total_bp;
+
         // Read stats
         vector<unsigned int> read_length;
-        unsigned long int total_reads;
-        unsigned long int total_bp;
-        unsigned int min_read_length;
-        unsigned int max_read_length;
-        float mean_read_length;
+        vector<unsigned int> read_length_count;
+        unsigned long int read_total;
+        unsigned int read_min;
+        double read_mean;
+        double read_std;
+        double read_median;
+        unsigned int read_max;
+        double read_25th;
+        double read_75th;
 
         // Qual stats
         vector<double> per_read_qual;
         vector<unsigned int> per_base_qual;
         vector<unsigned int> per_base_count;
         int phred;
+        unsigned int min_phred;
+        unsigned int max_phred;
         double qual_sum;
         double qual_mean;
         double qual_median;
@@ -42,22 +40,66 @@ class Stats {
         double qual_75th;
         double qual_std;
 
-        // JSON output
-        ostringstream json;
-
         void init(void) {
-            total_reads = 0;
+            read_total = 0;
             total_bp = 0;
             qual_sum = 0;
+            read_length_count.resize(MAX_READ_LENGTH,0);
             per_base_qual.resize(MAX_READ_LENGTH,0);
             per_base_count.resize(MAX_READ_LENGTH,0);
+            min_phred = 1000;
+            max_phred = -1000;
             phred = 33;
+        }
+
+        double get_percentile(vector<double> array, size_t size, float percentile) {
+            if (size % 2 == 0) {
+                int p = int(size * percentile - 1);
+                return (array[p] + array[p]) / 2.0;
+            } else {
+                int p = int(size * percentile);
+                return array[p];
+            }
+        }
+
+        double get_std(vector<double> array, double mean) {
+            double temp = 0;
+            for (unsigned int i = 0; i < read_total; i++) {
+
+                temp += pow(((array[i]-phred) - mean), 2);
+            }
+            return sqrt(temp / read_total);
+        }
+
+        double get_percentile(vector<unsigned int> array, size_t size, float percentile) {
+            if (size % 2 == 0) {
+                int p = int(size * percentile - 1);
+                return (array[p] + array[p]) / 2.0;
+            } else {
+                int p = int(size * percentile);
+                return array[p];
+            }
+        }
+
+        double get_std(vector<unsigned int> array, double mean) {
+            double temp = 0;
+            for (unsigned int i = 0; i < read_total; i++) {
+                temp += pow((array[i] - mean), 2);
+            }
+            return sqrt(temp / read_total);
         }
 
         void transform_quality(string qual) {
             unsigned int total = 0;
+            total_bp += qual.length();
+            read_length_count[qual.length()]++;
             for (unsigned int i = 0; i < qual.length(); i++) {
-                unsigned int qual_val = (unsigned int)qual[i]-phred;
+                unsigned int qual_val = (unsigned int)qual[i];
+                if (qual_val < min_phred) {
+                    min_phred = qual_val;
+                } else if (qual_val > max_phred) {
+                    max_phred = qual_val;
+                }
                 per_base_qual[i] += qual_val;
                 per_base_count[i]++;
                 total += qual_val;
@@ -67,87 +109,80 @@ class Stats {
             per_read_qual.push_back(avg_qual);
         }
 
-        void read_stats(void) {
-            min_read_length = read_length[0];
-            max_read_length = min_read_length;
-            total_bp = 0;
-            for(std::vector<unsigned int>::iterator j=read_length.begin();j!=read_length.end();++j) {
-                if (*j > max_read_length) {
-                    max_read_length = *j;
-                } else if (*j < min_read_length) {
-                    min_read_length = *j;
-                }
-                total_bp += *j;
+        void guess_phred() {
+            if (max_phred > 74 && min_phred > 58) {
+                phred = 64;
+            } else if (max_phred <= 74 && min_phred >= 33) {
+                phred = 33;
+            } else {
+                phred = 33;
             }
+        }
 
-            mean_read_length = total_bp / float(total_reads);
+        void read_stats(void) {
+            sort(read_length.begin(), read_length.end());
+            read_min = read_length.front();
+            read_mean = total_bp / float(read_total);
+            read_std = get_std(read_length, read_mean);
+            read_max = read_length.back();
+            read_25th = get_percentile(read_length, read_length.size(), 0.25);
+            read_median = get_percentile(read_length, read_length.size(), 0.50);
+            read_75th = get_percentile(read_length, read_length.size(), 0.75);
         }
 
         void qual_stats(void) {
-            qual_mean = qual_sum / total_reads;
-            double temp = 0;
-            for (unsigned int i = 0; i < total_reads; i++) {
-                temp += (per_read_qual[i] - qual_mean) * (per_read_qual[i] - qual_mean);
-            }
-            qual_std = sqrt(temp / total_reads);
-
-            size_t size = per_read_qual.size();
             sort(per_read_qual.begin(), per_read_qual.end());
-
-            if (size % 2 == 0) {
-                qual_25th = (per_read_qual[size / 4 - 1] + per_read_qual[size / 4]) / 2.0;
-                qual_median = (per_read_qual[size / 2 - 1] + per_read_qual[size / 2]) / 2.0;
-                qual_75th = (per_read_qual[int(size * 0.75 - 1)] + per_read_qual[int(size * 0.75)]) / 2.0;
-            }
-            else {
-                qual_25th = per_read_qual[size / 4];
-                qual_median = per_read_qual[size / 2];
-                qual_75th = per_read_qual[int(size * 0.75)];
-            }
+            qual_mean = (qual_sum / read_total) - phred;
+            qual_std = get_std(per_read_qual, qual_mean);
+            qual_25th = get_percentile(per_read_qual, per_read_qual.size(), 0.25) - phred;
+            qual_median = get_percentile(per_read_qual, per_read_qual.size(), 0.50) - phred;
+            qual_75th = get_percentile(per_read_qual, per_read_qual.size(), 0.75) - phred;
         }
 
         void jsonify_stats(float GENOME_SIZE) {
-            json << "{";
-            json << "\"total_bp\":" << total_bp << ",";
-            json << "\"total_reads\":" << total_reads << ",";
-            json << "\"min_read_length\":" << min_read_length << ",";
-            json << "\"mean_read_length\":" << mean_read_length << ",";
-            json << "\"max_read_length\":" << max_read_length << ",";
-            json << "\"qual_mean\":" << qual_mean << ",";
-            json << "\"qual_std\":" << qual_std << ",";
-            json << "\"qual_median\":" << qual_median << ",";
-            json << "\"qual_25th\":" << qual_25th << ",";
-            json << "\"qual_75th\":" << qual_75th;
-
-            // Output coverage is GENOME_SIZE given
-            if (GENOME_SIZE > 0) {
-                json << "\"coverage\":" << total_bp / GENOME_SIZE << ",";
+            string t1 = "    ";
+            string t2 = "        ";
+            cout << "{" << endl;
+            cout << t1 << "\"qc_stats\": {" << endl;
+            cout << t2 << "\"total_bp\":" << total_bp << "," << endl;
+            cout << t2 << "\"coverage\":" << total_bp / GENOME_SIZE << "," << endl;
+            cout << t2 << "\"read_total\":" << read_total << "," << endl;
+            cout << t2 << "\"read_min\":" << read_min << "," << endl;
+            cout << t2 << "\"read_mean\":" << read_mean << "," << endl;
+            cout << t2 << "\"read_std\":" << read_std << "," << endl;
+            cout << t2 << "\"read_median\":" << read_median << "," << endl;
+            cout << t2 << "\"read_max\":" << read_max << "," << endl;
+            cout << t2 << "\"read_25th\":" << read_25th << "," << endl;
+            cout << t2 << "\"read_75th\":" << read_75th << "," << endl;
+            cout << t2 << "\"qual_mean\":" << qual_mean << "," << endl;
+            cout << t2 << "\"qual_std\":" << qual_std << "," << endl;
+            cout << t2 << "\"qual_median\":" << qual_median << "," << endl;
+            cout << t2 << "\"qual_25th\":" << qual_25th << "," << endl;
+            cout << t2 << "\"qual_75th\":" << qual_75th << endl;
+            cout << t1 << "}," << endl;
+            cout << t1 << "\"read_lengths\": {" << endl;
+            for (unsigned int i = read_min; i <= read_max; i++) {
+                if (i % 5 == 0) {
+                    cout << endl;
+                }
+                cout << t2 << "\"" << i << "\":" << read_length_count[i];
+                if (i < read_max) {
+                    cout << ",";
+                }
             }
-
-            json << "}";
-        }
-
-        void print_stats(float GENOME_SIZE) {
-            cout << json.str() << endl;
-            cout << "Mean Phred Quality By Position Index" << endl;
-            cout << "Position\tMean Quality" << endl;
-            for (unsigned int i = 0; i < max_read_length; i++) {
-                cout << i << "\t" << per_base_qual[i] / float(per_base_count[i]) << endl;
+            cout << endl << t1 << "}," << endl;
+            cout << t1 << "\"per_base_quality\": {" << endl;
+            for (unsigned int i = 0; i < read_max; i++) {
+                if (i % 5 == 0 && i != 0) {
+                    cout << endl;
+                }
+                cout << t2 << "\"" << i + 1 << "\":" << (per_base_qual[i] / float(per_base_count[i])) - phred;
+                if (i < read_max - 1) {
+                    cout << ",";
+                }
             }
-            cout << "Overall Mean Phred Quality: " << setprecision(5) << qual_mean << " (s.d. " << qual_std << ")" << endl;
-            cout << "Overall Median Phred Quality: " << setprecision(5) << qual_median << endl;
-            cout << "Overall 25th Percentile Phred Quality: " << setprecision(5) << qual_25th << endl;
-            cout << "Overall 75th Percentile Phred Quality: " << setprecision(5) << qual_75th << endl;
-            cout << "Total Basepairs: " << total_bp << endl;
-            cout << "Total Reads: " << total_reads << endl;
-            cout << "Mean Read Length: " << mean_read_length << endl;
-            cout << "Minimum Read Length: " << min_read_length << endl;
-            cout << "Maximum Read Length: " << max_read_length << endl;
-
-            // Output coverage is GENOME_SIZE given
-            if (GENOME_SIZE > 0) {
-                cout << "Estimated Coverage: " << total_bp / GENOME_SIZE << endl;
-            }
+            cout << endl << t1 << "}" << endl;
+            cout << "}" << endl;
         }
 };
 
@@ -162,16 +197,16 @@ int main(int argc,char **argv) {
         if(!getline(in,plus,'\n')) break;
         if(!getline(in,qual,'\n')) break;
         stats.read_length.push_back(seq.length());
-        stats.total_reads++;
+        stats.read_total++;
         stats.transform_quality(qual);
     }
     in.close();
 
     // Determine Stats
     float GENOME_SIZE = argc == 1 ? 0.0 : atof(argv[1]);
+    stats.guess_phred();
     stats.read_stats();
     stats.qual_stats();
     stats.jsonify_stats(GENOME_SIZE);
-    stats.print_stats(GENOME_SIZE);
     return 0;
 }
