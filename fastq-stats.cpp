@@ -203,7 +203,7 @@ int main(int argc,char **argv) {
     in.close();
 
     // Determine Stats
-    float GENOME_SIZE = argc == 1 ? 0.0 : atof(argv[1]);
+    float GENOME_SIZE = argc == 1 ? 1.0 : atof(argv[1]);
     stats.guess_phred();
     stats.read_stats();
     stats.qual_stats();
