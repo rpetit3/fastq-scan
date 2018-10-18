@@ -189,7 +189,7 @@ class Stats {
 
 static int usage()
 {
-    cout << "Usage:   cat FASTQ | fastq-stats [options]" << endl;
+    cout << "Usage: cat FASTQ | fastq-scan [options]" << endl;
     cout << "Version: " << VERSION << endl;
     cout << endl;
     cout << "Optional arguments:" << endl;
@@ -202,7 +202,7 @@ static int usage()
 
 static int version()
 {
-    cout << "fastq-stats " << VERSION << endl;
+    cout << "fastq-scan " << VERSION << endl;
     return 0;
 }
 
