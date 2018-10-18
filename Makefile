@@ -1,7 +1,7 @@
 all: build;
 
 build: ;
-	g++ -Wall -O3 -o fastq-stats fastq-stats.cpp
+	g++ -Wall -O3 -o fastq-scan fastq-scan.cpp
 
 clean: ;
-	rm -f fastq-stats
+	rm -f fastq-scan
