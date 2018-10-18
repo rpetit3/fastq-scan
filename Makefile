@@ -5,3 +5,6 @@ build: ;
 
 clean: ;
 	rm -f fastq-scan
+
+test: ;
+	./fastq-scan -h
