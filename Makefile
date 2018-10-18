@@ -1,7 +1,8 @@
+CC ?= g++
 all: build;
 
 build: ;
-	g++ -Wall -O3 -o fastq-scan fastq-scan.cpp
+	$(CC) -Wall -O3 -o fastq-scan fastq-scan.cpp
 
 clean: ;
 	rm -f fastq-scan
