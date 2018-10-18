@@ -25,7 +25,7 @@ This will compile the program using g++, and I'll let you handle where to put it
 ### Usage
 ```
 ./fastq-scan
-Usage:   cat FASTQ | fastq-stats [options]
+Usage:   cat FASTQ | fastq-scan [options]
 Version: 0.2
 
 Optional arguments:
