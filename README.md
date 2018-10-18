@@ -16,7 +16,7 @@ git clone git@github.com:rpetit3/fastq-scan.git
 cd fastq-scan
 make
 ```
-This will compile the program using g++, and I'll let you handle where to put it. I've testing this on gcc version 7.3.0, but would guess since its pretty basic most gcc versions should be fine.
+This will compile the program using g++, and I'll let you handle where to put it. I've testing this on gcc version 7.3.0, but would guess since its pretty basic most gcc versions should be fine. You can then run `make test` to make sure everything is working as expected.
 
 ```
 make test
