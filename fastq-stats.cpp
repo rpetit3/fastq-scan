@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -7,7 +8,7 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const float VERSION = 0.1;
+const float VERSION = 0.2;
 const int MAX_READ_LENGTH = 50000;
 
 class Stats {
@@ -186,16 +187,48 @@ class Stats {
         }
 };
 
-int main(int argc,char **argv) {
+static int usage()
+{
+    cout << "Usage:   cat FASTQ | fastq-stats [options]" << endl;
+    cout << "Version: " << VERSION << endl;
+    cout << endl;
+    cout << "Optional arguments:" << endl;
+    cout << "    -g INT   Genome size for calculating estimated sequencing coverage. (Default 1)" << endl;
+    cout << "    -v       Print version information and exit" << endl;
+    cout << "    -h       Show this message and exit" << endl;
+    cout << endl;
+    return 0;
+}
+
+static int version()
+{
+    cout << "fastq-stats " << VERSION << endl;
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    // Read command line
+    float GENOME_SIZE =  1.0;
+    int opt;
+    while ((opt = getopt(argc, argv, "g:vh")) >= 0) {
+        switch (opt) {
+            case 'g': GENOME_SIZE = atof(optarg); break;
+            case 'v': return version();
+            case 'h': return usage();
+        }
+    }
+    if (isatty(0)) return usage();
+
+    // Parse FASTQ
     Stats stats;
     stats.init();
     string name, seq, plus, qual;
     ifstream in("/dev/stdin", ios::in);
     while(true) {
-        if(!getline(in,name,'\n')) break;
-        if(!getline(in,seq,'\n')) break;
-        if(!getline(in,plus,'\n')) break;
-        if(!getline(in,qual,'\n')) break;
+        if(!getline(in, name, '\n')) break;
+        if(!getline(in, seq, '\n')) break;
+        if(!getline(in, plus, '\n')) break;
+        if(!getline(in, qual, '\n')) break;
         stats.read_length.push_back(seq.length());
         stats.read_total++;
         stats.transform_quality(qual);
@@ -203,7 +236,6 @@ int main(int argc,char **argv) {
     in.close();
 
     // Determine Stats
-    float GENOME_SIZE = argc == 1 ? 1.0 : atof(argv[1]);
     stats.guess_phred();
     stats.read_stats();
     stats.qual_stats();
