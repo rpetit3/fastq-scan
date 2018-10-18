@@ -8,3 +8,4 @@ clean: ;
 
 test: ;
 	./fastq-scan -h
+	cat example.fq | ./fastq-scan -g 150000
