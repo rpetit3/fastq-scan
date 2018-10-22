@@ -4,11 +4,11 @@
 I wanted a quick method to output simple summary statistics of an input FASTQ in JSON format. There are (likely better) alternatives including [FastQC](https://github.com/s-andrews/FastQC) and [seqtk's fqchk](https://github.com/lh3/seqtk), but they didn't ouput JSON which I wanted. After a brief Google search, I stumbled upon the Biostars question: ["How To Efficiently Parse A Huge Fastq File?"](https://www.biostars.org/p/10353/#10358). From this question I used code from Pierre Lindenbaum's C++ solution as the base for this program.
 
 # Installation
-### Bioconda [TODO]
-Working on getting this submitted to Bioconda
-
-### Brew [TODO]
-Same goes for Brew
+### Bioconda
+*fastq-scan* is availble on [BioConda](https://bioconda.github.io/recipes/fastq-scan/README.html).
+```
+conda install fastq-scan
+```
 
 ### From Source
 ```
