@@ -11,7 +11,7 @@ I wanted a quick method to output simple summary statistics of an input FASTQ in
 ### Bioconda
 *fastq-scan* is availble on [BioConda](https://bioconda.github.io/recipes/fastq-scan/README.html).
 ```
-conda install fastq-scan
+conda install -c bioconda fastq-scan
 ```
 
 ### From Source
