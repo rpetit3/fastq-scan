@@ -1,5 +1,6 @@
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/fastq-scan/README.html)
 [![Docker Repository on Quay.io](https://quay.io/repository/biocontainers/fastq-scan/status "Docker Repository on Quay.io")](https://quay.io/repository/biocontainers/fastq-scan)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/fastq-scan/badges/downloads.svg)](https://anaconda.org/bioconda/fastq-scan)
 
 *fastq-scan* reads a FASTQ from STDIN and outputs summary statistics (read lengths, per-read qualities, per-base qualities) in JSON format.
 
