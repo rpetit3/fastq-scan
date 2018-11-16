@@ -26,10 +26,11 @@ This will compile the program using g++, and I'll let you handle where to put it
 make test
 ./fastq-scan -h
 Usage: cat FASTQ | fastq-scan [options]
-Version: 0.2
+Version: 0.3
 
 Optional arguments:
     -g INT   Genome size for calculating estimated sequencing coverage. (Default 1)
+    -p INT   ASCII offset for input quality scores, can be 33 or 64. (Default 33)
     -v       Print version information and exit
     -h       Show this message and exit
 
@@ -88,28 +89,32 @@ cat example.fq | ./fastq-scan -g 150000
 ### Usage
 ```
 ./fastq-scan
-Usage:   cat FASTQ | fastq-scan [options]
-Version: 0.2
+Usage: cat FASTQ | fastq-scan [options]
+Version: 0.3
 
 Optional arguments:
     -g INT   Genome size for calculating estimated sequencing coverage. (Default 1)
+    -p INT   ASCII offset for input quality scores, can be 33 or 64. (Default 33)
     -v       Print version information and exit
     -h       Show this message and exit
 ```
 
 #### *-g* Genome Size
-This is an optional parameter that you can use to estimate the sequencing coverage as calulated by (TOTAL_BP / GENOME_SIZE). By default, the genome size is set to 1.
+This is an optional parameter that you can use to estimate the sequencing coverage as calulated by (TOTAL_BP / GENOME_SIZE). By default, the genome size is set to 1. If a genome size is not given the total coverage will not be calculated and instead be set to `0.00` in the final JSON output.
+
+#### *-p* ASCII Offset for Quality Scores
+This optional parameter can be used to explicitely state the ASCII offset for the input quality scores. It defaults to PHRED+33 scores. Only `33` or `64` are valid inputs for this parameter.
 
 #### *-v* Version
 ```
 ./fastq-scan -v
-fastq-scan 0.2
+fastq-scan 0.3
 ```
 
 ### *example.fq*
-An example FASTQ file, aptly named *example.fq*, has been included to demonstrate usage of *fastq-scan*. For those interested this is a small set of simulated reads from the [*Lotus japonicus* (NC_002694)](https://www.ncbi.nlm.nih.gov/nuccore/NC_002694.1) chloroplast genome. The reads were simulated using [ART (vMountRainier)](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm).
+An example FASTQ file, aptly named *example-q33.fq* (also *example-q64.fq*), has been included to demonstrate usage of *fastq-scan*. For those interested this is a small set of simulated reads from the [*Lotus japonicus* (NC_002694)](https://www.ncbi.nlm.nih.gov/nuccore/NC_002694.1) chloroplast genome. The reads were simulated using [ART (vMountRainier)](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm).
 ```
-head example.fq
+head example-q33.fq
 @NC_002694.1-75
 TGTATACAATAAGAATCCATTTATTGACAAATTTCATTCGAAAATTATGAAACATAAATTTTTTTTTATTGGATCAAGAATTCCAATTTTTTAAGTATAA
 +
@@ -124,7 +129,7 @@ AAAAAGTGAAATATTCAGTTAATGAATGCCGAATCTCCGCTCTTATTCTATGAACATTTCATAATCCTATAAATTATCTT
 
 ### Execution
 ```
-cat example.fq | ./fastq-scan -g 150000
+cat example-q33.fq | ./fastq-scan -g 150000
 ```
 
 
