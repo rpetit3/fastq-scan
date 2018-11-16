@@ -8,7 +8,7 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const float VERSION = 0.2;
+const float VERSION = 0.3;
 const int MAX_READ_LENGTH = 50000;
 
 class Stats {
@@ -20,10 +20,10 @@ class Stats {
         vector<unsigned int> read_length_count;
         unsigned long int read_total;
         unsigned int read_min;
+        unsigned int read_max;
         double read_mean;
         double read_std;
         double read_median;
-        unsigned int read_max;
         double read_25th;
         double read_75th;
 
@@ -32,8 +32,8 @@ class Stats {
         vector<unsigned int> per_base_qual;
         vector<unsigned int> per_base_count;
         int phred;
-        unsigned int min_phred;
-        unsigned int max_phred;
+        unsigned int qual_min;
+        unsigned int qual_max;
         double qual_sum;
         double qual_mean;
         double qual_median;
@@ -48,8 +48,6 @@ class Stats {
             read_length_count.resize(MAX_READ_LENGTH,0);
             per_base_qual.resize(MAX_READ_LENGTH,0);
             per_base_count.resize(MAX_READ_LENGTH,0);
-            min_phred = 1000;
-            max_phred = -1000;
             phred = 33;
         }
 
@@ -66,7 +64,6 @@ class Stats {
         double get_std(vector<double> array, double mean) {
             double temp = 0;
             for (unsigned int i = 0; i < read_total; i++) {
-
                 temp += pow(((array[i]-phred) - mean), 2);
             }
             return sqrt(temp / read_total);
@@ -96,11 +93,6 @@ class Stats {
             read_length_count[qual.length()]++;
             for (unsigned int i = 0; i < qual.length(); i++) {
                 unsigned int qual_val = (unsigned int)qual[i];
-                if (qual_val < min_phred) {
-                    min_phred = qual_val;
-                } else if (qual_val > max_phred) {
-                    max_phred = qual_val;
-                }
                 per_base_qual[i] += qual_val;
                 per_base_count[i]++;
                 total += qual_val;
@@ -108,16 +100,6 @@ class Stats {
             double avg_qual = total / qual.length();
             qual_sum += avg_qual;
             per_read_qual.push_back(avg_qual);
-        }
-
-        void guess_phred() {
-            if (max_phred > 74 && min_phred > 58) {
-                phred = 64;
-            } else if (max_phred <= 74 && min_phred >= 33) {
-                phred = 33;
-            } else {
-                phred = 33;
-            }
         }
 
         void read_stats(void) {
@@ -133,8 +115,10 @@ class Stats {
 
         void qual_stats(void) {
             sort(per_read_qual.begin(), per_read_qual.end());
+            qual_min = per_read_qual.front() - phred;
             qual_mean = (qual_sum / read_total) - phred;
             qual_std = get_std(per_read_qual, qual_mean);
+            qual_max = per_read_qual.back() - phred;
             qual_25th = get_percentile(per_read_qual, per_read_qual.size(), 0.25) - phred;
             qual_median = get_percentile(per_read_qual, per_read_qual.size(), 0.50) - phred;
             qual_75th = get_percentile(per_read_qual, per_read_qual.size(), 0.75) - phred;
@@ -146,7 +130,11 @@ class Stats {
             cout << "{" << endl;
             cout << t1 << "\"qc_stats\": {" << endl;
             cout << t2 << "\"total_bp\":" << total_bp << "," << endl;
-            cout << t2 << "\"coverage\":" << total_bp / GENOME_SIZE << "," << endl;
+            if (GENOME_SIZE == 1)  {
+                cout << t2 << "\"coverage\": 0.00," << endl;
+            } else {
+                cout << t2 << "\"coverage\":" << total_bp / GENOME_SIZE << "," << endl;
+            }
             cout << t2 << "\"read_total\":" << read_total << "," << endl;
             cout << t2 << "\"read_min\":" << read_min << "," << endl;
             cout << t2 << "\"read_mean\":" << read_mean << "," << endl;
@@ -155,8 +143,10 @@ class Stats {
             cout << t2 << "\"read_max\":" << read_max << "," << endl;
             cout << t2 << "\"read_25th\":" << read_25th << "," << endl;
             cout << t2 << "\"read_75th\":" << read_75th << "," << endl;
+            cout << t2 << "\"qual_min\":" << qual_min << "," << endl;
             cout << t2 << "\"qual_mean\":" << qual_mean << "," << endl;
             cout << t2 << "\"qual_std\":" << qual_std << "," << endl;
+            cout << t2 << "\"qual_max\":" << qual_max << "," << endl;
             cout << t2 << "\"qual_median\":" << qual_median << "," << endl;
             cout << t2 << "\"qual_25th\":" << qual_25th << "," << endl;
             cout << t2 << "\"qual_75th\":" << qual_75th << endl;
@@ -194,6 +184,7 @@ static int usage()
     cout << endl;
     cout << "Optional arguments:" << endl;
     cout << "    -g INT   Genome size for calculating estimated sequencing coverage. (Default 1)" << endl;
+    cout << "    -p INT   ASCII offset for input quality scores, can be 33 or 64. (Default 33)" << endl;
     cout << "    -v       Print version information and exit" << endl;
     cout << "    -h       Show this message and exit" << endl;
     cout << endl;
@@ -209,19 +200,26 @@ static int version()
 int main(int argc, char **argv) {
     // Read command line
     float GENOME_SIZE =  1.0;
+    int PHRED_OFFSET = 33;
     int opt;
-    while ((opt = getopt(argc, argv, "g:vh")) >= 0) {
+    while ((opt = getopt(argc, argv, "g:p:vh")) >= 0) {
         switch (opt) {
             case 'g': GENOME_SIZE = atof(optarg); break;
+            case 'p': PHRED_OFFSET = atoi(optarg); break;
             case 'v': return version();
             case 'h': return usage();
         }
+    }
+    if (!(PHRED_OFFSET == 33 || PHRED_OFFSET == 64)) {
+        cerr << "Invalid value for -p (" << PHRED_OFFSET << "), only 33 or 64 are valid" << endl;
+        return 1;
     }
     if (isatty(0)) return usage();
 
     // Parse FASTQ
     Stats stats;
     stats.init();
+    stats.phred = PHRED_OFFSET;
     string name, seq, plus, qual;
     ifstream in("/dev/stdin", ios::in);
     while(true) {
@@ -236,7 +234,6 @@ int main(int argc, char **argv) {
     in.close();
 
     // Determine Stats
-    stats.guess_phred();
     stats.read_stats();
     stats.qual_stats();
     stats.jsonify_stats(GENOME_SIZE);
