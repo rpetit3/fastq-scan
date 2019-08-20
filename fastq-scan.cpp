@@ -8,8 +8,8 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const float VERSION = 0.3;
-const int MAX_READ_LENGTH = 50000;
+const string VERSION = "0.4.0";
+const int MAX_READ_LENGTH = 50000000;
 
 class Stats {
     public:
