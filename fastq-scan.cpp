@@ -129,34 +129,34 @@ class Stats {
             string t2 = "        ";
             cout << "{" << endl;
             cout << t1 << "\"qc_stats\": {" << endl;
-            cout << t2 << "\"total_bp\":" << total_bp << "," << endl;
+            cout << t2 << "\"total_bp\": " << total_bp << "," << endl;
             if (GENOME_SIZE <= 1)  {
                 cout << t2 << "\"coverage\": 0.00," << endl;
             } else {
-                cout << t2 << "\"coverage\":" << total_bp / GENOME_SIZE << "," << endl;
+                cout << t2 << "\"coverage\": " << total_bp / GENOME_SIZE << "," << endl;
             }
-            cout << t2 << "\"read_total\":" << read_total << "," << endl;
-            cout << t2 << "\"read_min\":" << read_min << "," << endl;
-            cout << t2 << "\"read_mean\":" << read_mean << "," << endl;
-            cout << t2 << "\"read_std\":" << read_std << "," << endl;
-            cout << t2 << "\"read_median\":" << read_median << "," << endl;
-            cout << t2 << "\"read_max\":" << read_max << "," << endl;
-            cout << t2 << "\"read_25th\":" << read_25th << "," << endl;
-            cout << t2 << "\"read_75th\":" << read_75th << "," << endl;
-            cout << t2 << "\"qual_min\":" << qual_min << "," << endl;
-            cout << t2 << "\"qual_mean\":" << qual_mean << "," << endl;
-            cout << t2 << "\"qual_std\":" << qual_std << "," << endl;
-            cout << t2 << "\"qual_max\":" << qual_max << "," << endl;
-            cout << t2 << "\"qual_median\":" << qual_median << "," << endl;
-            cout << t2 << "\"qual_25th\":" << qual_25th << "," << endl;
-            cout << t2 << "\"qual_75th\":" << qual_75th << endl;
+            cout << t2 << "\"read_total\": " << read_total << "," << endl;
+            cout << t2 << "\"read_min\": " << read_min << "," << endl;
+            cout << t2 << "\"read_mean\": " << read_mean << "," << endl;
+            cout << t2 << "\"read_std\": " << read_std << "," << endl;
+            cout << t2 << "\"read_median\": " << read_median << "," << endl;
+            cout << t2 << "\"read_max\": " << read_max << "," << endl;
+            cout << t2 << "\"read_25th\": " << read_25th << "," << endl;
+            cout << t2 << "\"read_75th\": " << read_75th << "," << endl;
+            cout << t2 << "\"qual_min\": " << qual_min << "," << endl;
+            cout << t2 << "\"qual_mean\": " << qual_mean << "," << endl;
+            cout << t2 << "\"qual_std\": " << qual_std << "," << endl;
+            cout << t2 << "\"qual_max\": " << qual_max << "," << endl;
+            cout << t2 << "\"qual_median\": " << qual_median << "," << endl;
+            cout << t2 << "\"qual_25th\": " << qual_25th << "," << endl;
+            cout << t2 << "\"qual_75th\": " << qual_75th << endl;
             cout << t1 << "}," << endl;
             cout << t1 << "\"read_lengths\": {" << endl;
             for (unsigned int i = read_min; i <= read_max; i++) {
                 if (i % 5 == 0) {
                     cout << endl;
                 }
-                cout << t2 << "\"" << i << "\":" << read_length_count[i];
+                cout << t2 << "\"" << i << "\": " << read_length_count[i];
                 if (i < read_max) {
                     cout << ",";
                 }
@@ -167,7 +167,7 @@ class Stats {
                 if (i % 5 == 0 && i != 0) {
                     cout << endl;
                 }
-                cout << t2 << "\"" << i + 1 << "\":" << (per_base_qual[i] / float(per_base_count[i])) - phred;
+                cout << t2 << "\"" << i + 1 << "\": " << (per_base_qual[i] / float(per_base_count[i])) - phred;
                 if (i < read_max - 1) {
                     cout << ",";
                 }
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
     if (!(PHRED_OFFSET == 33 || PHRED_OFFSET == 64)) {
         cerr << "Invalid value for -p (" << PHRED_OFFSET << "), only 33 or 64 are valid" << endl;
         return 1;
-    } else if (GENOME_SIZE < 0)) {
+    } else if (GENOME_SIZE < 0) {
         cerr << "Invalid value for -g (" << GENOME_SIZE << "), value muse be >= 0" << endl;
         return 1;
     }
