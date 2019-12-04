@@ -8,7 +8,7 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const string VERSION = "0.4.0";
+const string VERSION = "0.4.1";
 const int MAX_READ_LENGTH = 50000000;
 
 class Stats {
@@ -130,7 +130,7 @@ class Stats {
             cout << "{" << endl;
             cout << t1 << "\"qc_stats\": {" << endl;
             cout << t2 << "\"total_bp\":" << total_bp << "," << endl;
-            if (GENOME_SIZE == 1)  {
+            if (GENOME_SIZE <= 1)  {
                 cout << t2 << "\"coverage\": 0.00," << endl;
             } else {
                 cout << t2 << "\"coverage\":" << total_bp / GENOME_SIZE << "," << endl;
@@ -213,7 +213,11 @@ int main(int argc, char **argv) {
     if (!(PHRED_OFFSET == 33 || PHRED_OFFSET == 64)) {
         cerr << "Invalid value for -p (" << PHRED_OFFSET << "), only 33 or 64 are valid" << endl;
         return 1;
+    } else if (GENOME_SIZE < 0)) {
+        cerr << "Invalid value for -g (" << GENOME_SIZE << "), value muse be >= 0" << endl;
+        return 1;
     }
+    
     if (isatty(0)) return usage();
 
     // Parse FASTQ
