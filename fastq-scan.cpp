@@ -87,7 +87,7 @@ class Stats {
             return sqrt(temp / read_total);
         }
 
-        void transform_quality(string qual) {
+        int transform_quality(string qual) {
             unsigned int total = 0;
             total_bp += qual.length();
             read_length_count[qual.length()]++;
@@ -97,9 +97,15 @@ class Stats {
                 per_base_count[i]++;
                 total += qual_val;
             }
-            double avg_qual = total / qual.length();
-            qual_sum += avg_qual;
-            per_read_qual.push_back(avg_qual);
+
+            if (qual.length() > 0) {
+                double avg_qual = total / qual.length();
+                qual_sum += avg_qual;
+                per_read_qual.push_back(avg_qual);
+                return 0;
+            } else {
+                return 1;
+            }
         }
 
         void read_stats(void) {
@@ -233,7 +239,16 @@ int main(int argc, char **argv) {
         if(!getline(in, qual, '\n')) break;
         stats.read_length.push_back(seq.length());
         stats.read_total++;
-        stats.transform_quality(qual);
+        int missing_qual = stats.transform_quality(qual);
+        if (missing_qual == 1){
+            cerr << "WARNING: Missing quality for a read.\n";
+            cerr << name << "\n";
+            cerr << seq << "\n";
+            cerr << plus << "\n";
+            cerr << qual << "\n";
+            cerr << "Please fix it to continue.\n";
+            exit(50);
+        }
     }
     in.close();
 
