@@ -8,7 +8,7 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const string VERSION = "0.4.1";
+const string VERSION = "0.4.4";
 const int MAX_READ_LENGTH = 50000000;
 
 class Stats {
@@ -252,9 +252,14 @@ int main(int argc, char **argv) {
     }
     in.close();
 
-    // Determine Stats
-    stats.read_stats();
-    stats.qual_stats();
-    stats.jsonify_stats(GENOME_SIZE);
+    if (stats.read_total > 0) {
+        // Determine Stats
+        stats.read_stats();
+        stats.qual_stats();
+        stats.jsonify_stats(GENOME_SIZE);
+    } else {
+        // Empty file, or nothing to parse
+        cerr << "Nothing to parse in STDIN, please verify your file is not empty." << endl;
+    }
     return 0;
 }
