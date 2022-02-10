@@ -1,0 +1,28 @@
+name: Test fastq-scan
+
+on:
+  push:
+    branches: [ master, main, dev ]
+  pull_request:
+    branches: [ master, main, dev ]
+    
+jobs:
+  fastq-scan-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout rpetit3/fastq-scan
+        uses: actions/checkout@v2
+
+      - name: Build and Test
+        run: |
+          make
+          ./fastq-scan -v
+          ./fastq-scan -h
+          cat example.fq | ./fastq-scan -g 30000
+          cat example-q64.fq | ./fastq-scan -p 64 -q
