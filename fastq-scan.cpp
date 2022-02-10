@@ -156,9 +156,12 @@ class Stats {
             cout << t2 << "\"qual_median\": " << qual_median << "," << endl;
             cout << t2 << "\"qual_25th\": " << qual_25th << "," << endl;
             cout << t2 << "\"qual_75th\": " << qual_75th << endl;
-            cout << t1 << "}," << endl;
             
-            if (!QC_ONLY) {
+            
+            if (QC_ONLY) {
+                cout << t1 << "}" << endl;
+            } else {
+                cout << t1 << "}," << endl;
                 cout << t1 << "\"read_lengths\": {" << endl;
                 for (unsigned int i = read_min; i <= read_max; i++) {
                     if (i % 5 == 0) {
