@@ -130,7 +130,7 @@ class Stats {
             qual_75th = get_percentile(per_read_qual, per_read_qual.size(), 0.75) - phred;
         }
 
-        void jsonify_stats(float GENOME_SIZE) {
+        void jsonify_stats(float GENOME_SIZE, bool QC_ONLY) {
             string t1 = "    ";
             string t2 = "        ";
             cout << "{" << endl;
@@ -157,28 +157,31 @@ class Stats {
             cout << t2 << "\"qual_25th\": " << qual_25th << "," << endl;
             cout << t2 << "\"qual_75th\": " << qual_75th << endl;
             cout << t1 << "}," << endl;
-            cout << t1 << "\"read_lengths\": {" << endl;
-            for (unsigned int i = read_min; i <= read_max; i++) {
-                if (i % 5 == 0) {
-                    cout << endl;
+            
+            if (!QC_ONLY) {
+                cout << t1 << "\"read_lengths\": {" << endl;
+                for (unsigned int i = read_min; i <= read_max; i++) {
+                    if (i % 5 == 0) {
+                        cout << endl;
+                    }
+                    cout << t2 << "\"" << i << "\": " << read_length_count[i];
+                    if (i < read_max) {
+                        cout << ",";
+                    }
                 }
-                cout << t2 << "\"" << i << "\": " << read_length_count[i];
-                if (i < read_max) {
-                    cout << ",";
+                cout << endl << t1 << "}," << endl;
+                cout << t1 << "\"per_base_quality\": {" << endl;
+                for (unsigned int i = 0; i < read_max; i++) {
+                    if (i % 5 == 0 && i != 0) {
+                        cout << endl;
+                    }
+                    cout << t2 << "\"" << i + 1 << "\": " << (per_base_qual[i] / float(per_base_count[i])) - phred;
+                    if (i < read_max - 1) {
+                        cout << ",";
+                    }
                 }
+                cout << endl << t1 << "}" << endl;
             }
-            cout << endl << t1 << "}," << endl;
-            cout << t1 << "\"per_base_quality\": {" << endl;
-            for (unsigned int i = 0; i < read_max; i++) {
-                if (i % 5 == 0 && i != 0) {
-                    cout << endl;
-                }
-                cout << t2 << "\"" << i + 1 << "\": " << (per_base_qual[i] / float(per_base_count[i])) - phred;
-                if (i < read_max - 1) {
-                    cout << ",";
-                }
-            }
-            cout << endl << t1 << "}" << endl;
             cout << "}" << endl;
         }
 };
@@ -191,6 +194,7 @@ static int usage()
     cout << "Optional arguments:" << endl;
     cout << "    -g INT   Genome size for calculating estimated sequencing coverage. (Default 1)" << endl;
     cout << "    -p INT   ASCII offset for input quality scores, can be 33 or 64. (Default 33)" << endl;
+    cout << "    -q       Print only the QC stats, do not print read lengths or per-base quality scores" << endl;
     cout << "    -v       Print version information and exit" << endl;
     cout << "    -h       Show this message and exit" << endl;
     cout << endl;
@@ -207,11 +211,13 @@ int main(int argc, char **argv) {
     // Read command line
     float GENOME_SIZE =  1.0;
     int PHRED_OFFSET = 33;
+    bool QC_ONLY = false;
     int opt;
-    while ((opt = getopt(argc, argv, "g:p:vh")) >= 0) {
+    while ((opt = getopt(argc, argv, "g:p:qvh")) >= 0) {
         switch (opt) {
             case 'g': GENOME_SIZE = atof(optarg); break;
             case 'p': PHRED_OFFSET = atoi(optarg); break;
+            case 'q': QC_ONLY = true; break;
             case 'v': return version();
             case 'h': return usage();
         }
@@ -256,7 +262,7 @@ int main(int argc, char **argv) {
         // Determine Stats
         stats.read_stats();
         stats.qual_stats();
-        stats.jsonify_stats(GENOME_SIZE);
+        stats.jsonify_stats(GENOME_SIZE, QC_ONLY);
     } else {
         // Empty file, or nothing to parse
         cerr << "Nothing to parse in STDIN, please verify your file is not empty." << endl;
