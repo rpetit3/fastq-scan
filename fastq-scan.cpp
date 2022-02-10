@@ -8,7 +8,7 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const string VERSION = "0.4.5";
+const string VERSION = "1.0.0";
 const int MAX_READ_LENGTH = 50000000;
 
 class Stats {
