@@ -8,7 +8,7 @@
 #include <math.h>
 #include <sstream>
 using namespace std;
-const string VERSION = "1.0.0";
+const string VERSION = "1.0.1";
 const int MAX_READ_LENGTH = 50000000;
 
 class Stats {
@@ -29,8 +29,8 @@ class Stats {
 
         // Qual stats
         vector<double> per_read_qual;
-        vector<unsigned int> per_base_qual;
-        vector<unsigned int> per_base_count;
+        vector<unsigned long int> per_base_qual;
+        vector<unsigned long int> per_base_count;
         int phred;
         unsigned int qual_min;
         unsigned int qual_max;
